@@ -102,7 +102,7 @@ void commandManager(char** tokens){
     }else if(strcmp("fg",tokens[0]) == 0){
         printf("fg command not not implemented yet");
     }else if(strcmp("bg",tokens[0]) == 0){
-        printft("bg command not implemented yet");
+        printf("bg command not implemented yet");
     }else{
         execute(tokens);
     }
@@ -117,6 +117,15 @@ void freeTokens(char** tokens, int count){
     }
     free(tokens);
 }
+void cleanup(char** tokens, int count, char* line){
+    free(line);
+    for(int i=0;i< count;i++){
+        free(tokens[i]);
+    }
+    free(tokens);
+    clear_history();
+}
+
 int main(){
 
     printf("Mini Shell\n");
@@ -128,15 +137,21 @@ int main(){
     int* count = &countVal;
     while((line = readline(">> ")) != NULL){
         if(line[0] == '\0'){
-            break;
+            continue;
         }
 
 
         add_history(line);
         char** tokens = tokenizer(line,count);
+        if(strcmp(tokens[0], "exit") == 0){
+            cleanup(tokens, countVal, line);
+            exit(0);
+        }
         commandManager(tokens);
 
+        freeTokens(tokens,*count);
         free(line);
+        *count = 0;
         line = NULL;
     }
     state = history_get_history_state();
