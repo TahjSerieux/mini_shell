@@ -11,6 +11,7 @@
 // waitpid()
 #include <sys/wait.h>
 // String comparator
+#include <fcntl.h>
 int countWords(char* c){
     // printf("[countWords] Start\n");
     bool inWord = false;
@@ -37,7 +38,7 @@ int countWords(char* c){
 char** tokenizer(char* line, int* count){
     // printf("Start tokenization\n");
     int wordCount = countWords(line);
-    char ** arr = malloc(wordCount * (sizeof(char *)+1));
+    char ** arr = malloc((wordCount + 1) * (sizeof(char *)));
     char** currentWord = arr;
 
 
@@ -72,11 +73,101 @@ char** tokenizer(char* line, int* count){
     return(arr);
 }
 
-void execute(char** tokens){
+char** execute(char** tokens, int count){
+    char** curr = tokens;
+    char* redirect = NULL;
+    char* file;
 
+    // for(int i=0;i< count;i++){
+    //     printf("token: %s\n", tokens[i]);
+    // }
+
+    
+    while(*curr){
+
+        char* token =  *curr;
+
+
+        // printf("token: %s\n",token);
+        if(strcmp(token,">") == 0 || strcmp(token,">>")== 0 || strcmp(token,"<") == 0){
+            
+            redirect =  token;
+            int length = curr -  tokens;
+            // printf("The length is: %d\n",length);
+            char ** newTokens =  malloc(sizeof(char *) * (length +1));
+            for(int i = 0;i< length;i++){
+                newTokens[i] = tokens[i];
+
+            }
+            newTokens[length]  = NULL;
+
+
+
+
+            // printf("New Tokens\n");
+            // for(int i =0;i< length;i++){
+            //     printf("%s\n", newTokens[i]);
+            // }
+            // printf("End Of New Tokens\n");
+            curr++;
+            token =  *curr;
+            file = token;
+            free(tokens);
+            tokens = NULL;
+            tokens = newTokens;
+            break;
+        }
+        // printf("%s\n",*curr);
+        curr++;
+    }
+    // if(redirect && file){
+    //     printf("redirect: %s\n",redirect);
+    //     printf("file: %s\n", file);
+    // }
+    curr = tokens;
+    // printf("listing tokens: \n");
+    // while(*curr){
+    //     printf("%s\n",*curr);
+    //     curr++;
+    // }
+    // printf("End of listing tokens: \n");
+
+    
     pid_t p = fork();
 
     if(p == 0){
+        // int fd = open(file,O_RDWR);
+        //     dup2(fd,1);
+        //     printf("fd 1 now refers to %s\n", file);
+        if(redirect && file){
+            if(strcmp(redirect,"<") == 0){
+                int fd =  open(file,O_RDONLY,0644);
+                if(fd < 0){
+                    perror("open");
+                    exit(1);
+                }
+                dup2(fd,0);
+                close(fd);
+            }else if(strcmp(redirect, ">") == 0){
+                int fd = open(file, O_CREAT| O_WRONLY,0644);
+                if(fd < 0){
+                    perror("open");
+                    exit(1);
+                }
+                dup2(fd,1);
+                close(fd);
+                // O_APPEND
+                // o
+            }else if(strcmp(redirect,">>") == 0){
+                int fd = open(file,O_CREAT| O_WRONLY| O_APPEND,0644);
+                if(fd < 0){
+                    perror("open");
+                    exit(1);
+                }
+                dup2(fd,1);
+                close(fd);
+            }
+        }
         execvp(tokens[0], tokens);
 
         fprintf(stderr, "mini_shell: %s: command not found\n", tokens[0]);
@@ -88,11 +179,15 @@ void execute(char** tokens){
     }else{
         printf("fork failed");
     }
+    // printf("%s\n",redirect );
+    // printf("%s\n",file );
+    return(tokens);
+
 }
 
-void commandManager(char** tokens){
+char** commandManager(char** tokens,int count){
     char* command = tokens[0];
-
+    
     if(strcmp("cd",command)==0){
         if(chdir(tokens[1]) != 0){
             perror("cd failed");
@@ -104,23 +199,32 @@ void commandManager(char** tokens){
     }else if(strcmp("bg",tokens[0]) == 0){
         printf("bg command not implemented yet");
     }else{
-        execute(tokens);
+        tokens = execute(tokens,count);
+       
     }
+    return(tokens);
 
 
 
 }
 
-void freeTokens(char** tokens, int count){
-    for(int i=0;i<count;i++){
-        free(tokens[i]);
+void freeTokens(char** tokens){
+
+
+    char** curr = tokens;
+    curr = tokens;
+    while(*curr){
+        free(*curr);
+        curr++;
     }
     free(tokens);
 }
 void cleanup(char** tokens, int count, char* line){
     free(line);
-    for(int i=0;i< count;i++){
-        free(tokens[i]);
+    char** curr =  tokens;
+    while(*curr){
+        free(*curr);
+        curr++;
     }
     free(tokens);
     clear_history();
@@ -143,13 +247,15 @@ int main(){
 
         add_history(line);
         char** tokens = tokenizer(line,count);
+
+        
         if(strcmp(tokens[0], "exit") == 0){
             cleanup(tokens, countVal, line);
             exit(0);
         }
-        commandManager(tokens);
+        tokens = commandManager(tokens,*count);
 
-        freeTokens(tokens,*count);
+        freeTokens(tokens);
         free(line);
         *count = 0;
         line = NULL;
