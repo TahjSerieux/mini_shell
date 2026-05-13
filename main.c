@@ -16,6 +16,8 @@
 #include <signal.h> 
 
 #include <unistd.h>
+
+#include <sys/wait.h> 
 #define RUNNING 0
 #define STOPPED 1
 #define DONE    2
@@ -586,7 +588,6 @@ void cleanup(char** tokens, int count, char* line){
 int main(){
     signal(SIGCHLD, sigchldHandler);
     
-    // initialize job table
     for(int i = 0; i < MAX_JOBS; i++){
         jobTable[i].id = EMPTY_JOB_ID;
         jobTable[i].pgid = -1;
@@ -594,7 +595,20 @@ int main(){
         jobTable[i].state = DONE;
     }
 
-    fprintf(stderr, "Mini Shell\n");
+    if (isatty(STDIN_FILENO)) {
+        pid_t boot_pid = fork();
+        if (boot_pid == 0) {
+            signal(SIGINT, SIG_DFL);
+            execlp("python3", "python3", "boot.py", NULL);
+            execlp("python",  "python",  "boot.py", NULL);
+            _exit(0); 
+        } else if (boot_pid > 0) {
+            int st;
+            waitpid(boot_pid, &st, 0);
+        }
+        tcsetpgrp(STDIN_FILENO, getpgrp());
+        write(STDOUT_FILENO, "\n", 1);
+    }
 
     using_history();
 
@@ -617,7 +631,6 @@ int main(){
                 free(line);
                 break;
             }
-            // strip trailing newline
             if(line[read-1] == '\n') line[read-1] = '\0';
         }
         
@@ -647,3 +660,67 @@ int main(){
     fprintf(stderr, "The number of entries is: %d\n", history_get_history_state()->length);
     return 0;
 }
+// int main(){
+//     signal(SIGCHLD, sigchldHandler);
+    
+//     // initialize job table
+//     for(int i = 0; i < MAX_JOBS; i++){
+//         jobTable[i].id = EMPTY_JOB_ID;
+//         jobTable[i].pgid = -1;
+//         jobTable[i].cmd = NULL;
+//         jobTable[i].state = DONE;
+//     }
+
+//     fprintf(stderr, "Mini Shell\n");
+
+//     using_history();
+
+//     char* line = NULL;
+//     int countVal = 0;
+//     int* count = &countVal;
+
+//     signal(SIGINT, SIG_IGN);
+//     signal(SIGTSTP, SIG_IGN);
+//     signal(SIGTTOU, SIG_IGN);
+
+//     char* prompt = isatty(STDIN_FILENO) ? ">> " : NULL;
+//     while(1){
+//         if(isatty(STDIN_FILENO)){
+//             line = readline(prompt);
+//         } else {
+//             size_t len = 0;
+//             ssize_t read = getline(&line, &len, stdin);
+//             if(read == -1){
+//                 free(line);
+//                 break;
+//             }
+//             // strip trailing newline
+//             if(line[read-1] == '\n') line[read-1] = '\0';
+//         }
+        
+//         if(line == NULL) break;
+//         if(line[0] == '\0'){
+//             free(line);
+//             continue;
+//         }
+
+//         add_history(line);
+//         char** tokens = tokenizer(line, count);
+
+//         if(strcmp(tokens[0], "exit") == 0){
+//             cleanup(tokens, countVal, line);
+//             exit(0);
+//         }
+
+//         tokens = commandManager(tokens, *count);
+
+//         freeTokens(tokens);
+//         free(line);
+//         line = NULL;
+//         *count = 0;
+//     }
+
+
+//     fprintf(stderr, "The number of entries is: %d\n", history_get_history_state()->length);
+//     return 0;
+// }

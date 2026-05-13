@@ -95,7 +95,7 @@ BANNER3 = [
     "██║╚██╔╝██║██║██║╚██╗██║██║    ╚════██║██╔══██║██╔══╝  ██║     ██║",  
     "██║ ╚═╝ ██║██║██║ ╚████║██║    ███████║██║  ██║███████╗███████╗███████╗",
     "╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝    ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝",
-    "  [ AOS Shell ]    v1.0",
+    "[ AOS Shell ]    v0.1",
     ""                                                                
 ]
 
@@ -104,7 +104,9 @@ if __name__ == "__main__":
     write("\a")  # terminal bell = "boot beep"
     crt_boot(BANNER3)
     time.sleep(0.3)
-    decrypt_reveal("  Initializing encrypted channel...")
-    decrypt_reveal("  Loading identity keys...")
+    decrypt_reveal("Patent pending...")
+    decrypt_reveal("Initializing shell...")
+    decrypt_reveal("Connecting to kernel...")
     time.sleep(0.2)
-    write(f"\n{BLUE_BRIGHT}  > Ready.{RESET}\n\n")
+    write(f"\n{BLUE_BRIGHT}======== Ready ========\n\n")
+    # write(f"\n{BLUE_BRIGHT}  > Ready.{RESET}\n\n")
