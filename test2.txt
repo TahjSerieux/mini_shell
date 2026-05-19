@@ -1,0 +1,9 @@
+boot.py
+file.c
+main.c
+makefile
+mini_shell
+output.txt
+test2.txt
+test.sh
+test.txt

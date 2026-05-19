@@ -120,7 +120,6 @@ void sigchldHandler(int sig){
 }
 
 char* copyCharPointer(char* oldString, char* newString){
-    // Assumes the oldPointer ends with NULL and newPointer has allocated enough space for all the characters + NULL.
     char* oldHead = oldString;
     char* newHead =  newString;
 
@@ -553,11 +552,9 @@ char** commandManager(char** tokens,int count){
     }else if(strcmp("fg",tokens[0]) == 0){
         int id = atoi(tokens[1]);
         fgJob(id);
-        // printf("fg command not not implemented yet");
     }else if(strcmp("bg",tokens[0]) == 0){
         int id = atoi(tokens[1]);
         bgJob(id);
-        // printf("bg command not implemented yet");
     }else{
         tokens = execute(tokens,count);
     }
@@ -616,8 +613,8 @@ int main(){
     int countVal = 0;
     int* count = &countVal;
 
-    signal(SIGINT, SIG_IGN);
-    signal(SIGTSTP, SIG_IGN);
+    signal(SIGINT, SIG_IGN); //Ctrl c
+    signal(SIGTSTP, SIG_IGN); //Ctrl Z
     signal(SIGTTOU, SIG_IGN);
 
     char* prompt = isatty(STDIN_FILENO) ? ">> " : NULL;
@@ -657,70 +654,6 @@ int main(){
     }
 
 
-    fprintf(stderr, "The number of entries is: %d\n", history_get_history_state()->length);
+    // fprintf(stderr, "The number of entries is: %d\n", history_get_history_state()->length);
     return 0;
 }
-// int main(){
-//     signal(SIGCHLD, sigchldHandler);
-    
-//     // initialize job table
-//     for(int i = 0; i < MAX_JOBS; i++){
-//         jobTable[i].id = EMPTY_JOB_ID;
-//         jobTable[i].pgid = -1;
-//         jobTable[i].cmd = NULL;
-//         jobTable[i].state = DONE;
-//     }
-
-//     fprintf(stderr, "Mini Shell\n");
-
-//     using_history();
-
-//     char* line = NULL;
-//     int countVal = 0;
-//     int* count = &countVal;
-
-//     signal(SIGINT, SIG_IGN);
-//     signal(SIGTSTP, SIG_IGN);
-//     signal(SIGTTOU, SIG_IGN);
-
-//     char* prompt = isatty(STDIN_FILENO) ? ">> " : NULL;
-//     while(1){
-//         if(isatty(STDIN_FILENO)){
-//             line = readline(prompt);
-//         } else {
-//             size_t len = 0;
-//             ssize_t read = getline(&line, &len, stdin);
-//             if(read == -1){
-//                 free(line);
-//                 break;
-//             }
-//             // strip trailing newline
-//             if(line[read-1] == '\n') line[read-1] = '\0';
-//         }
-        
-//         if(line == NULL) break;
-//         if(line[0] == '\0'){
-//             free(line);
-//             continue;
-//         }
-
-//         add_history(line);
-//         char** tokens = tokenizer(line, count);
-
-//         if(strcmp(tokens[0], "exit") == 0){
-//             cleanup(tokens, countVal, line);
-//             exit(0);
-//         }
-
-//         tokens = commandManager(tokens, *count);
-
-//         freeTokens(tokens);
-//         free(line);
-//         line = NULL;
-//         *count = 0;
-//     }
-
-
-//     fprintf(stderr, "The number of entries is: %d\n", history_get_history_state()->length);
-//     return 0;
-// }
